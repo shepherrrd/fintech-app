@@ -49,6 +49,8 @@ class TransferController extends Controller
             'currency'    => $sender->wallet->currency,
             'type'        => 'TRANSFER',
             'description' => 'User-to-user transfer',
+            'reference'   => 'TRF_' . uniqid(),
+            'status'      => 'completed',
         ]);
 
         // Notify sender

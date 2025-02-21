@@ -26,6 +26,7 @@ class CurrencyController extends Controller
      */
     public function convertCurrency(Request $request)
     {
+        try {
         $request->validate([
             'amount' => 'required|numeric|min:1',
             'from_currency' => 'required|string|size:3',
@@ -35,27 +36,32 @@ class CurrencyController extends Controller
         $amount = $request->input('amount');
         $from = strtoupper($request->input('from_currency'));
         $to = strtoupper($request->input('to_currency'));
-        $apiKey = config('services.currencylayer.key');
-        $url = config('services.currencylayer.url') . '/live';
-        $response = Http::get($url, [
+        $cacheKey = "currency_rate_{$from}_{$to}";
+        $rate = cache()->remember($cacheKey, 3600, function () use ($from, $to) {
+            $apiKey = config('services.currencylayer.key');
+            $url = config('services.currencylayer.url') . '/live';
+            $response = Http::get($url, [
             'access_key' => $apiKey,
             'currencies' => $to,
             'source' => $from,
             'format' => 1,
-        ]);
+            ]);
 
-        $data = $response->json();
+            $data = $response->json();
 
-        if (!isset($data['success']) || !$data['success']) {
+            if (!isset($data['success']) || !$data['success']) {
             log('Currency conversion failed.', ['response' => $data]);
-            return back()->withErrors(['msg' => 'Currency conversion failed.']);
-        }
+            throw new \Exception('Currency conversion failed.');
+            }
 
-        $quoteKey = $from . $to;
-        if (!isset($data['quotes'][$quoteKey])) {
-            return back()->withErrors(['msg' => 'Conversion rate not found.']);
-        }
-        $rate = $data['quotes'][$quoteKey];
+            $quoteKey = $from . $to;
+            if (!isset($data['quotes'][$quoteKey])) {
+            throw new \Exception('Conversion rate not found.');
+            }
+
+            return $data['quotes'][$quoteKey];
+        });
+
         $convertedAmount = $amount * $rate;
         $transaction = Transaction::create([
             'sender_id' => Auth::id(),
@@ -67,5 +73,8 @@ class CurrencyController extends Controller
         ]);
 
         return view('currency.index', compact('convertedAmount', 'rate', 'amount', 'from', 'to', 'transaction'));
+    } catch (\Exception $e) {
+        return back()->withErrors([$e->getMessage()]);
+    }
     }
 }

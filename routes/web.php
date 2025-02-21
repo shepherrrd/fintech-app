@@ -80,7 +80,8 @@ Route::middleware(['auth'])->group(function () {
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
 
-
+    // Paystack
+    Route::post('/wallet/paystack/initialize', [WalletController::class, 'initializePaystackPayment'])->name('wallet.paystack.initialize');
     Route::post('/wallet/paystack/verify-inline', [WalletController::class, 'verifyPaystackPaymentInline'])->name('wallet.paystack.verify.inline');
 
 });

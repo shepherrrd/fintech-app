@@ -20,16 +20,41 @@
     </div>
 
     @push('scripts')
+        <!-- Include Paystack Inline JS -->
         <script src="https://js.paystack.co/v1/inline.js"></script>
+        <!-- Include Toastify for notifications -->
         <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                document.getElementById('payButton').addEventListener('click', function(e) {
-                    e.preventDefault();
-                    let amount = document.getElementById('amount').value;
-                    if (!amount || amount <= 0) {
+            // No DOMContentLoaded wrapper is needed if this script is pushed at the bottom of the layout
+            let payButton = document.getElementById('payButton');
+            payButton.addEventListener('click', async function(e) {
+                e.preventDefault();
+                let amount = document.getElementById('amount').value;
+                if (!amount || amount <= 0) {
+                    Toastify({
+                        text: "Please enter a valid amount",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f56565"
+                    }).showToast();
+                    return;
+                }
+
+                // Initialize the transaction on the backend
+                try {
+                    let initResponse = await fetch("{{ route('wallet.paystack.initialize') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                        },
+                        body: JSON.stringify({ amount: amount })
+                    });
+                    let initData = await initResponse.json();
+                    if (!initData.success) {
                         Toastify({
-                            text: "Please enter a valid amount",
+                            text: "Failed to initialize payment: " + initData.message,
                             duration: 3000,
                             gravity: "top",
                             position: "right",
@@ -37,9 +62,8 @@
                         }).showToast();
                         return;
                     }
-                    let amountInKobo = amount * 100;
-                    let reference = 'PS_' + Math.floor((Math.random() * 1000000000) + 1);
-
+                    let reference = initData.reference;
+                    let amountInKobo = initData.amountInKobo;
                     let handler = PaystackPop.setup({
                         key: '{{ config("services.paystack.public_key") }}',
                         email: '{{ auth()->user()->email }}',
@@ -60,50 +84,60 @@
                         }
                     });
                     handler.openIframe();
-                });
 
-                function verifyPayment(reference) {
-                    fetch("{{ route('wallet.paystack.verify.inline') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': "{{ csrf_token() }}"
-                        },
-                        body: JSON.stringify({ reference: reference })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            Toastify({
-                                text: "Payment successful! Your wallet has been topped up.",
-                                duration: 3000,
-                                gravity: "top",
-                                position: "right",
-                                backgroundColor: "#48bb78"
-                            }).showToast();
-                            window.location.href = "{{ route('wallet.index') }}";
-                        } else {
-                            Toastify({
-                                text: "Payment verification failed: " + data.message,
-                                duration: 3000,
-                                gravity: "top",
-                                position: "right",
-                                backgroundColor: "#f56565"
-                            }).showToast();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
+                } catch(error) {
+                    console.error('Error initializing transaction:', error);
+                    Toastify({
+                        text: "An error occurred while initializing payment.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f56565"
+                    }).showToast();
+                }
+            });
+
+            function verifyPayment(reference) {
+                fetch("{{ route('wallet.paystack.verify.inline') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify({ reference: reference })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
                         Toastify({
-                            text: "An error occurred while verifying payment.",
+                            text: "Payment successful! Your wallet has been topped up.",
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            backgroundColor: "#48bb78"
+                        }).showToast();
+                        window.location.href = "{{ route('wallet.index') }}";
+                    } else {
+                        Toastify({
+                            text: "Payment verification failed: " + data.message,
                             duration: 3000,
                             gravity: "top",
                             position: "right",
                             backgroundColor: "#f56565"
                         }).showToast();
-                    });
-                }
-            });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during verification:', error);
+                    Toastify({
+                        text: "An error occurred while verifying payment.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f56565"
+                    }).showToast();
+                });
+            }
         </script>
     @endpush
 </x-app-layout>

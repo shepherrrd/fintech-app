@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
         $table->unsignedBigInteger('sender_id')->nullable();
         $table->unsignedBigInteger('receiver_id')->nullable();
-        $table->decimal('amount', 15, 2);
+        $table->decimal('amount', 15,   2);
         $table->string('currency')->default('USD');
         $table->string('type');
         $table->text('description')->nullable();

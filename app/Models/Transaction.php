@@ -15,6 +15,8 @@ class Transaction extends Model
         'currency',
         'type',
         'description',
+        'status',
+        'reference',
     ];
 
     public function sender()

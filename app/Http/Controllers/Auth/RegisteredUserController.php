@@ -45,9 +45,9 @@ class RegisteredUserController extends Controller
         $wallet = Wallet::create([
             'user_id' => $user->id,
             'balance' => 0,
-            'currency' => 'USD',
+            'currency' => 'NGN',
         ]);
-        
+
         event(new Registered($user));
 
         Auth::login($user);

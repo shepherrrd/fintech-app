@@ -7,12 +7,19 @@
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">Notifications</h1>
         <div class="mb-4">
-            You have <span id="notificationCount">{{ auth()->user()->unreadNotifications->count() }}</span> new notifications.
+            You have <span id="notificationCount" class="font-semibold">{{ auth()->user()->unreadNotifications->count() }}</span> new notifications.
         </div>
-        <ul id="notificationList" class="list-disc pl-5">
+        <ul id="notificationList" class="list-disc pl-5 space-y-4">
             @foreach(auth()->user()->notifications as $notification)
-                <li>
-                    {{ $notification->data['message'] }} <small>{{ $notification->created_at->diffForHumans() }}</small>
+                <li class="bg-white dark:bg-gray-800 shadow rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="text-gray-900 dark:text-gray-100">
+                            {{ $notification->data['message'] }}
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            <small>{{ $notification->created_at->diffForHumans() }}</small>
+                        </div>
+                    </div>
                 </li>
             @endforeach
         </ul>
@@ -32,7 +39,9 @@
                             countEl.innerText = currentCount + 1;
                             let listEl = document.getElementById('notificationList');
                             let li = document.createElement('li');
-                            li.innerHTML = `${e.notification.message} <small>${moment().fromNow()}</small>`;
+                            li.classList.add('bg-white', 'dark:bg-gray-800', 'shadow', 'rounded-lg', 'p-4', 'flex', 'items-center', 'justify-between');
+                            li.innerHTML = `<div class="text-gray-900 dark:text-gray-100">${e.notification.message}</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400"><small>${moment().fromNow()}</small></div>`;
                             listEl.prepend(li);
                         });
                 } else {
