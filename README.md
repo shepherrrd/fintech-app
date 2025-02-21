@@ -1,66 +1,288 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Fintech Application
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A mini Fintech application built with Laravel 11, Tailwind CSS, and Laravel Echo that includes:
 
-## About Laravel
+- **User Authentication:** Custom auth system (without email verification).
+- **Wallet Management:** Add funds via Paystack (inline integration with real-time verification).
+- **User-to-User Transfers:** Send funds and view transaction history.
+- **Real-Time Updates:** Receive broadcasted events for transactions and notifications using Reverb (a Pusher‑compatible WebSocket service).
+- **Persistent Notifications:** Store notifications in the database and update them in real time.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Table of Contents
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Environment Configuration](#environment-configuration)
+- [Database Setup](#database-setup)
+- [Building Assets](#building-assets)
+- [Running the Application](#running-the-application)
+- [Real-Time Broadcasting](#real-time-broadcasting)
+- [Additional Commands](#additional-commands)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Prerequisites
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+- **PHP:** Version 8.2 or higher (if needed, override platform in composer.json)
+- **Composer:** Dependency manager for PHP
+- **Node.js & npm:** For building front-end assets (Vite is used)
+- **Database:** MySQL, PostgreSQL, or your preferred supported database
+- **WebSocket Service:** Reverb (or any Pusher‑compatible service)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. **Clone the Repository**
 
-### Premium Partners
+    ```bash
+    git clone https://github.com/shepherrrd/fintech-app.git
+    cd fintech-app
+    ```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+2. **Install Composer Dependencies**
 
-## Contributing
+    ```bash
+    composer install
+    ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+3. **Install Node Dependencies**
 
-## Code of Conduct
+    ```bash
+    npm install
+    ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+4. **Copy Environment File**
 
-## Security Vulnerabilities
+    Copy `.env.example` to `.env`:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+    ```bash
+    cp .env.example .env
+    ```
 
-## License
+5. **Generate Application Key**
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+    ```bash
+    php artisan key:generate
+    ```
+
+## Environment Configuration
+
+Edit your `.env` file to configure your database, Paystack, broadcasting, and queue settings.
+
+### Example .env Configuration
+
+```env
+APP_NAME="Fintech Application"
+APP_ENV=local
+APP_KEY=base64:YourGeneratedKeyHere
+APP_DEBUG=true
+APP_URL=http://localhost
+
+LOG_CHANNEL=stack
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=fintech_app
+DB_USERNAME=root
+DB_PASSWORD=
+
+BROADCAST_DRIVER=pusher
+CACHE_DRIVER=file
+QUEUE_CONNECTION=database
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+
+# Paystack Credentials
+PAYSTACK_PUBLIC_KEY=your_paystack_public_key
+PAYSTACK_SECRET_KEY=your_paystack_secret_key
+PAYSTACK_PAYMENT_URL=https://api.paystack.co
+MERCHANT_EMAIL=your_merchant_email
+
+# Reverb (Pusher-Compatible) Credentials
+REVERB_APP_ID=your_reverb_app_id
+REVERB_APP_KEY=your_reverb_app_key
+REVERB_APP_SECRET=your_reverb_app_secret
+REVERB_APP_CLUSTER=your_reverb_app_cluster
+
+# Vite Environment Variables (for Laravel Echo)
+VITE_REVERB_APP_KEY=${REVERB_APP_KEY}
+VITE_REVERB_APP_CLUSTER=${REVERB_APP_CLUSTER}
+VITE_REVERB_HOST=your-reverb-host.com
+VITE_REVERB_APP_PORT=6001
+```
+
+
+## Database Setup
+
+1. **Run Migrations**
+
+    Create necessary tables (including users, wallets, transactions, and notifications):
+
+    ```bash
+    php artisan migrate
+    ```
+
+
+3. **Notifications Table**
+
+    Laravel includes a migration for notifications. If not already present, generate and run:
+
+    ```bash
+    php artisan notifications:table
+    php artisan migrate
+    ```
+
+## Building Assets
+
+Use Vite to compile your CSS and JavaScript:
+
+### For Development (with hot-reload):
+
+```bash
+npm run dev
+```
+
+### For Production Build:
+
+```bash
+npm run build
+```
+
+## Running the Application
+
+1. **Start the Laravel Development Server**
+
+    ```bash
+    php artisan serve
+    ```
+
+    The application will be available at [http://localhost:8000](http://localhost:8000).
+
+2. **Start the Queue Worker**
+
+    To process queued jobs (such as notification broadcasting):
+
+    ```bash
+    php artisan queue:work
+    ```
+
+3. **Start the WebSocket Service**
+
+    If you’re using Reverb as a hosted service, ensure your credentials in the `.env` file are correct.
+    If using a local WebSocket server (e.g., laravel-websockets), run:
+
+    ```bash
+    php artisan websockets:serve
+    ```
+
+    Ensure your front-end Echo configuration points to the correct host and port.
+
+## Real-Time Broadcasting
+
+The application uses Laravel Echo to subscribe to private channels for real-time updates:
+
+### Transactions:
+
+Real-time updates for sent and received transactions are broadcast on channels like `private('transactions.{userId}')`.
+
+### Notifications:
+
+Persistent notifications are stored in the database and also broadcast via private channels `private('notifications.{userId}')`.
+
+### Front-End Example (JavaScript)
+
+Your `resources/js/bootstrap.js` should initialize Echo as follows:
+
+```js
+import Pusher from 'pusher-js';
+import Echo from 'laravel-echo';
+
+window.Pusher = Pusher;
+
+window.Echo = new Echo({
+     broadcaster: 'pusher',
+     key: import.meta.env.VITE_REVERB_APP_KEY,
+     cluster: import.meta.env.VITE_REVERB_APP_CLUSTER,
+     wsHost: import.meta.env.VITE_REVERB_HOST,
+     wsPort: import.meta.env.VITE_REVERB_APP_PORT,
+     forceTLS: false,
+     disableStats: true,
+});
+```
+
+Make sure to rebuild your assets after making changes:
+
+```bash
+npm run dev
+```
+
+## Additional Commands
+
+### Running Tests:
+
+If your project includes tests, run:
+
+```bash
+php artisan test
+```
+
+### Restarting the Queue Worker:
+
+After code changes affecting queued jobs, restart the worker:
+
+```bash
+php artisan queue:restart
+```
+
+### Clearing Cache:
+
+If configuration changes are not reflected, clear caches:
+
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
+
+## Troubleshooting
+
+### WebSocket Issues:
+
+- Verify that your `.env` values for Reverb are correct.
+- Check the browser console and network tab for WebSocket connection status.
+- Ensure your WebSocket service is running and accessible.
+
+### Queue Worker:
+
+- Ensure the queue worker is running to process notifications (`php artisan queue:work`).
+
+### Asset Compilation:
+
+- If changes do not appear, try running `npm run build` or `npm run dev` again.
+
+### Event Not Received:
+
+- Verify your channel authorization in `routes/channels.php`:
+
+  ```php
+  Broadcast::channel('notifications.{userId}', function ($user, $userId) {
+        return (int) $user->id === (int) $userId;
+  });
+
+  Broadcast::channel('transactions.{userId}', function ($user, $userId) {
+        return (int) $user->id === (int) $userId;
+  });
+  ```
+
+- Confirm that events are fired in your controllers (use logging to check).
+- Check your Echo subscription code and the event names.
+
+
+## Navigation
+
+Use the dropdown menu at the top of the page to navigate through different sections of the application.

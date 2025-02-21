@@ -33,6 +33,21 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function transactionsSent()
+    {
+        return $this->hasMany(Transaction::class, 'sender_id');
+    }
+
+    public function transactionsReceived()
+    {
+        return $this->hasMany(Transaction::class, 'receiver_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *
