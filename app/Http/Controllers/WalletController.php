@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\NewNotification;
 use App\Events\NewTransactionEvent;
+use App\Events\WalletUpdatedEvent;
 use App\Models\Wallet;
 use App\Models\Transaction;
 use App\Notifications\DepositSuccessfulNotification;
@@ -19,8 +20,8 @@ class WalletController extends Controller
 {
     public function index()
     {
-        $wallet = Auth::user()->wallet;
-        return view('wallet.index', compact('wallet'));
+        $wallets = Auth::user()->wallets;
+        return view('wallet.index', compact('wallets'));
     }
     public function showAddFundsForm()
     {
@@ -105,6 +106,13 @@ class WalletController extends Controller
             $transaction->status = 'credited';
             $transaction->description = 'Paystack payment - Credited';
             $transaction->save();
+
+            event(new WalletUpdatedEvent(
+                $wallet->id,
+                $wallet->balance,
+                $wallet->currency,
+                Auth::id()           
+            ));
 
             return response()->json([
                 'success' => true,

@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Events\NewNotification;
 use App\Events\NewTransactionEvent;
+use App\Events\WalletUpdatedEvent;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Notifications\CustomNotification;
+use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log as FacadesLog;
+
+use function Illuminate\Log\log;
 
 class TransferController extends Controller
 {
     public function showTransferForm()
     {
-        $users = User::where('id', '!=', Auth::id())->get();
+        $users = User::where('id', '!=', Auth::id())->with('wallets')->get();
+        log('Transfer form displayed.', ['user' => $users]);
         return view('transfer.index', compact('users'));
     }
 
@@ -22,26 +29,24 @@ class TransferController extends Controller
     {
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
+            'wallet_id' => 'required|exists:wallets,id',
             'amount' => 'required|numeric|min:1'
         ]);
 
         $sender = Auth::user();
         $receiver = User::findOrFail($request->input('receiver_id'));
+        $wallet = Wallet::findOrFail($request->input('wallet_id'));
 
-        // Check if sender has enough balance
         if ($sender->wallet->balance < $request->input('amount')) {
             return back()->withErrors(['Insufficient balance!']);
         }
 
-        // Deduct from sender
         $sender->wallet->balance -= $request->input('amount');
         $sender->wallet->save();
 
-        // Credit to receiver
-        $receiver->wallet->balance += $request->input('amount');
-        $receiver->wallet->save();
+        $wallet->balance += $request->input('amount');
+        $wallet->save();
 
-        // Record transaction
         $transaction = Transaction::create([
             'sender_id'   => $sender->id,
             'receiver_id' => $receiver->id,
@@ -53,7 +58,6 @@ class TransferController extends Controller
             'status'      => 'completed',
         ]);
 
-        // Notify sender
         $senderNotification = [
             'message' => "You transferred NGN {$transaction->amount} to {$receiver->name}",
             'type'    => 'transfer_out',
@@ -69,11 +73,25 @@ class TransferController extends Controller
         ];
         $receiver->notify(new CustomNotification($receiverNotification));
 
-        event(new NewNotification($senderNotification,$sender->id));
-        event(new NewNotification($receiverNotification,$receiver->id));
+        event(new NewNotification($senderNotification, $sender->id));
+        event(new NewNotification($receiverNotification, $receiver->id));
 
         event(new NewTransactionEvent($transaction, $sender->id));
         event(new NewTransactionEvent($transaction, $receiver->id));
+
+        event(new WalletUpdatedEvent(
+            $sender->wallet->id,
+            $sender->wallet->balance,
+            $sender->wallet->currency,
+            Auth::id()
+        ));
+
+        event(new WalletUpdatedEvent(
+            $wallet->id,
+            $wallet->balance,
+            $wallet->currency,
+            $receiver->id
+        ));
 
         return redirect()->route('transactions.index')->with('success', 'Transfer successful!');
     }

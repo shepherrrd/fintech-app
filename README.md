@@ -5,8 +5,10 @@ A mini Fintech application built with Laravel 11, Tailwind CSS, and Laravel Echo
 - **User Authentication:** Custom auth system (without email verification).
 - **Wallet Management:** Add funds via Paystack (inline integration with real-time verification).
 - **User-to-User Transfers:** Send funds and view transaction history.
-- **Real-Time Updates:** Receive broadcasted events for transactions and notifications using Reverb (a Pusher‑compatible WebSocket service).
+- **Real-Time Updates:** Receive broadcasted events for transactions, wallet updates and notifications using Reverb (a Pusher‑compatible WebSocket service).
 - **Persistent Notifications:** Store notifications in the database and update them in real time.
+- **Multi-Wallet System:** Manage multiple wallets per user, each with different currencies.
+- **Currency Conversion:** Convert funds between wallets using real-time exchange rates.
 
 ---
 
@@ -178,7 +180,7 @@ npm run build
     If using a local WebSocket server (e.g., laravel-websockets), run:
 
     ```bash
-    php artisan websockets:serve
+    php artisan reverb:start
     ```
 
     Ensure your front-end Echo configuration points to the correct host and port.
